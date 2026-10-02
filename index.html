@@ -1,26 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <link rel="manifest" href="./manifest.json">
+      <meta name="theme-color" content="#1e1e1e">
+      <link rel="icon" type="image/png" sizes="192x192" href="./icon_192.png">
+      <link rel="icon" type="image/png" sizes="512x512" href="./icon_512.png">
+      <link rel="apple-touch-icon" href="./icon_512.png">
+      <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+              .then(reg => console.log('SW Registered:', reg.scope))
+              .catch(err => console.error('SW Failed:', err));
+          });
+        }
+      </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Preview</title>
+</head>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #111; /* or your dark theme color */
+}
+
+header {
+  padding: 10px;
+  background: #222;
+  flex-shrink: 0; /* Keeps header pinned to its natural height */
+}
+
+#tool-frame {
+  width: 100%;
+  flex: 1; /* Automatically expands iframe to fill remaining height */
+  border: none;
+}
+</style>
+<body>
+<!-- Example Header Markup -->
 <header>
-  <select id="tool-select">
-    <option value="" disabled selected>-- Select Developer Tool --</option>
-    
-    <optgroup label="Core Utilities">
-      <option value="DBedit.html">DB Manager</option>
-      <option value="compiler.html">CDN Compiler</option>
-      <option value="devref.html">Dev Reference</option>
-    </optgroup>
-    
-    <optgroup label="Builders & Assets">
-      <option value="icons2.html">Icon Studio</option>
-      <option value="SWBuilder.html">SW Builder</option>
-      <option value="SVG Studio.html">SVG Studio</option>
-      <option value="opengraph.html">Opengraph Preview</option>
-      <option value="TypeLab.html">TypeLab</option>
-    </optgroup>
-  </select>
+     <button class="nav-btn" data-src="TypeLab.html">TypeLab</button>
+  <button class="nav-btn" data-src="compiler.html">Offline CDN compiler</button>
+<button class="nav-btn" data-src="devref.html">DevRef</button>
+<button class="nav-btn" data-src="DBedit.html">DB Manager</button>
+<button class="nav-btn" data-src="SWBuilder.html">SW Builder</button>
+<button class="nav-btn" data-src="SVG Studio.html">SVG Studio</button>
+<button class="nav-btn" data-src="opengraph.html">Opengraph</button>
+<button class="nav-btn" data-src="icons2.html">SimpleIcon</button>
 </header>
 
-<iframe id="tool-frame"></iframe>
-
-<template id="welcome-template">
+<iframe id="tool-frame" srcdoc="
   <!DOCTYPE html>
   <html>
     <head>
@@ -28,7 +62,7 @@
         body {
           background: #111;
           color: #888;
-          font-family: system-ui, -apple-system, sans-serif;
+          font-family: system-ui, sans-serif;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -37,8 +71,7 @@
           margin: 0;
           text-align: center;
         }
-        h2 { color: #fff; margin-bottom: 8px; font-weight: 500; }
-        p { margin: 0; font-size: 14px; }
+        h2 { color: #fff; margin-bottom: 8px; }
       </style>
     </head>
     <body>
@@ -46,35 +79,33 @@
       <p>Select a tool from the menu above to begin.</p>
     </body>
   </html>
-</template>
+"></iframe>
 
+<!-- Vanilla JS Switcher Script -->
 <script>
-  const toolSelect = document.getElementById('tool-select');
-  const toolFrame = document.getElementById('tool-frame');
-  const welcomeTemplate = document.getElementById('welcome-template');
+  const frame = document.getElementById('tool-frame');
+  const buttons = document.querySelectorAll('.nav-btn');
 
-  // 1. Initial Welcome View
-  function renderWelcomeView() {
-    toolFrame.removeAttribute('src');
-    toolFrame.srcdoc = welcomeTemplate.innerHTML;
-  }
+  buttons.forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    const targetSrc = e.currentTarget.getAttribute('data-src');
 
-  renderWelcomeView();
+    // Remove active class from all buttons, add to clicked button
+    buttons.forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
 
-  // 2. Exact Dropdown Logic (Mirrors button attribute reading)
-  if (toolSelect && toolFrame) {
-    toolSelect.addEventListener('change', () => {
-      // Pull value directly from selected option index to ensure clean string
-      const selectedOption = toolSelect.options[toolSelect.selectedIndex];
-      const targetSrc = selectedOption ? selectedOption.value : null;
-
-      if (targetSrc) {
-        // Strip srcdoc completely so the browser navigates .src cleanly
-        toolFrame.removeAttribute('srcdoc');
-        toolFrame.src = targetSrc;
-      } else {
-        renderWelcomeView();
-      }
-    });
-  }
+    try {
+      // Fetch the file text directly and inject as executable HTML
+      const response = await fetch(targetSrc);
+      const htmlText = await response.text();
+      frame.srcdoc = htmlText; 
+    } catch (err) {
+      // Fallback for standard web servers
+      frame.src = targetSrc;
+    }
+  });
+});
 </script>
+
+</body>
+</html>
