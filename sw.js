@@ -1,5 +1,5 @@
 // Service Worker: Offline-First SPA
-const CACHE_NAME = "devtoolset-v1.0.1";
+const CACHE_NAME = "devtoolset-v1.0.2";
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
