@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Logo Design & Icon Studio</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 1.5rem auto; padding: 0 1rem; color: #222; }
+    .studio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+    @media (max-width: 600px) { .studio-grid { grid-template-columns: 1fr; } }
+
+    .editor-box { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; background: #f9f9f9; text-align: center; }
+    .canvas-container { position: relative; width: 280px; height: 280px; margin: 0 auto 1rem; border: 2px dashed #0070f3; cursor: grab; overflow: hidden; background-color: #fff; background-image: repeating-linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), repeating-linear-gradient(45deg, #eee 25%, #fff 25%, #fff 75%, #eee 75%, #eee); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+    .canvas-container:active { cursor: grabbing; }
+    canvas#viewport { display: block; width: 100%; height: 100%; }
+
+    .controls { display: flex; flex-direction: column; gap: 0.75rem; text-align: left; }
+    .control-group { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; font-weight: bold; }
+    input[type="range"] { width: 100%; }
+
+    .btn { padding: 0.75rem 1rem; font-size: 1rem; font-weight: bold; color: #fff; background: #0070f3; border: none; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
+    .btn-sync { background: #28a745; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    #output { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .icon-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem; border: 1px solid #eee; border-radius: 6px; background: #fff; }
+    .badge { font-size: 0.75rem; background: #e0e0e0; padding: 2px 6px; border-radius: 4px; font-weight: normal; }
+  </style>
+</head>
+<body>
+
+  <h2>Logo Studio & Multi-Res Icon Builder</h2>
+  <p style="font-size: 0.9rem; color: #555;">Upload high-res raw images, position your logo, and export full branding sets.</p>
+
+  <input type="file" id="imageInput" accept="image/*" style="margin-bottom: 1rem;">
+
+  <div class="studio-grid">
+    <div class="editor-box">
+      <div class="canvas-container" id="canvasContainer">
+        <canvas id="viewport" width="280" height="280"></canvas>
+      </div>
+      <span style="font-size: 0.75rem; color: #666;">Drag image inside frame to align center</span>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="zoom">Zoom Scale</label>
+        <input type="range" id="zoom" min="0.1" max="3" step="0.01" value="1" disabled>
+      </div>
+
+      <div class="control-group">
+        <label for="bgColor">Background Color</label>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <input type="color" id="bgColor" value="#ffffff" disabled>
+          <label><input type="checkbox" id="transparentBg" checked disabled> Transparent</label>
+        </div>
+      </div>
+
+      <button id="generateBtn" class="btn" disabled>Generate Local Downloads</button>
+      <button id="syncBtn" class="btn btn-sync" disabled>⚡ Sync to Workspace</button>
+    </div>
+  </div>
+
+  <div id="output"></div>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const viewport = document.getElementById('viewport');
+    const ctx = viewport.getContext('2d');
+    const zoomInput = document.getElementById('zoom');
+    const bgColorInput = document.getElementById('bgColor');
+    const transparentBg = document.getElementById('transparentBg');
+    const generateBtn = document.getElementById('generateBtn');
+    const syncBtn = document.getElementById('syncBtn');
+    const output = document.getElementById('output');
+
+    let rawImg = null;
+    let posX = 0, posY = 0;
+    let isDragging = false, startX = 0, startY = 0;
+
+    const targets = [
+      { name: 'logo-master-2048.png', w: 2048, h: 2048, tag: 'High-Res Master' },
+      { name: 'app-icon-1024.png', w: 1024, h: 1024, tag: 'App Stores' },
+      { name: 'icon-512x512.png', w: 512, h: 512, tag: 'PWA Web App' },
+      { name: 'icon-192x192.png', w: 192, h: 192, tag: 'Android / PWA' },
+      { name: 'apple-touch-icon.png', w: 180, h: 180, tag: 'iOS Touch' },
+      { name: 'favicon-32x32.png', w: 32, h: 32, tag: 'Tab Favicon' },
+      { name: 'favicon-16x16.png', w: 16, h: 16, tag: 'Small Favicon' },
+      { name: 'favicon.ico', w: 32, h: 32, tag: 'Legacy ICO', isIco: true }
+    ];
+
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const img = new Image();
+        img.onload = () => {
+          rawImg = img;
+
+          const scale = Math.min(280 / img.width, 280 / img.height);
+          zoomInput.value = scale;
+          posX = (280 - img.width * scale) / 2;
+          posY = (280 - img.height * scale) / 2;
+
+          zoomInput.disabled = false;
+          bgColorInput.disabled = false;
+          transparentBg.disabled = false;
+          generateBtn.disabled = false;
+          syncBtn.disabled = false;
+
+          renderViewport();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderViewport() {
+      if (!rawImg) return;
+      const zoom = parseFloat(zoomInput.value);
+
+      ctx.clearRect(0, 0, 280, 280);
+
+      if (!transparentBg.checked) {
+        ctx.fillStyle = bgColorInput.value;
+        ctx.fillRect(0, 0, 280, 280);
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.drawImage(rawImg, posX, posY, rawImg.width * zoom, rawImg.height * zoom);
+    }
+
+    function getClientPos(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function startDrag(e) {
+      if (!rawImg) return;
+      isDragging = true;
+      const pos = getClientPos(e);
+      startX = pos.x - posX;
+      startY = pos.y - posY;
+    }
+
+    function moveDrag(e) {
+      if (!isDragging) return;
+      if (e.touches) e.preventDefault();
+
+      const pos = getClientPos(e);
+      posX = pos.x - startX;
+      posY = pos.y - startY;
+      renderViewport();
+    }
+
+    function endDrag() {
+      isDragging = false;
+    }
+
+    viewport.addEventListener('mousedown', startDrag);
+    window.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', endDrag);
+
+    viewport.addEventListener('touchstart', startDrag, { passive: false });
+    window.addEventListener('touchmove', moveDrag, { passive: false });
+    window.addEventListener('touchend', endDrag);
+
+    zoomInput.addEventListener('input', renderViewport);
+    bgColorInput.addEventListener('input', renderViewport);
+    transparentBg.addEventListener('change', renderViewport);
+
+    async function createIcoBlob(canvas) {
+      const pngBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      const pngBytes = new Uint8Array(await pngBlob.arrayBuffer());
+
+      const icoHeaderSize = 22;
+      const icoBuffer = new Uint8Array(icoHeaderSize + pngBytes.length);
+      const view = new DataView(icoBuffer.buffer);
+
+      view.setUint16(0, 0, true);
+      view.setUint16(2, 1, true);
+      view.setUint16(4, 1, true);
+
+      icoBuffer[6] = canvas.width >= 256 ? 0 : canvas.width;
+      icoBuffer[7] = canvas.height >= 256 ? 0 : canvas.height;
+      view.setUint16(10, 1, true);
+      view.setUint16(12, 32, true);
+      view.setUint32(14, pngBytes.length, true);
+      view.setUint32(18, icoHeaderSize, true);
+
+      icoBuffer.set(pngBytes, icoHeaderSize);
+      return new Blob([icoBuffer], { type: 'image/x-icon' });
+    }
+
+    // Helper to generate a single target canvas blob
+    async function renderTargetBlob(target) {
+      const masterCanvas = document.createElement('canvas');
+      const mCtx = masterCanvas.getContext('2d');
+      masterCanvas.width = target.w;
+      masterCanvas.height = target.h;
+
+      const ratio = target.w / 280;
+      mCtx.clearRect(0, 0, target.w, target.h);
+
+      if (!transparentBg.checked) {
+        mCtx.fillStyle = bgColorInput.value;
+        mCtx.fillRect(0, 0, target.w, target.h);
+      }
+
+      mCtx.imageSmoothingEnabled = true;
+      mCtx.imageSmoothingQuality = 'high';
+
+      mCtx.drawImage(
+        rawImg, 
+        posX * ratio, 
+        posY * ratio, 
+        (rawImg.width * parseFloat(zoomInput.value)) * ratio, 
+        (rawImg.height * parseFloat(zoomInput.value)) * ratio
+      );
+
+      if (target.isIco) {
+        return await createIcoBlob(masterCanvas);
+      } else {
+        return await new Promise(r => masterCanvas.toBlob(r, 'image/png'));
+      }
+    }
+
+    // Standard Download Output
+    generateBtn.addEventListener('click', async () => {
+      if (!rawImg) return;
+      output.innerHTML = '';
+
+      for (const target of targets) {
+        const blob = await renderTargetBlob(target);
+        const downloadUrl = URL.createObjectURL(blob);
+
+        const row = document.createElement('div');
+        row.className = 'icon-row';
+        row.innerHTML = `
+          <div>
+            <strong>${target.name}</strong> (${target.w}x${target.h}px)
+            <span class="badge">${target.tag}</span>
+          </div>
+          <a href="${downloadUrl}" download="${target.name}">Download</a>
+        `;
+        output.appendChild(row);
+      }
+    });
+
+    // Cross-Window PostMessage Bridge to EliteAppWrap
+    syncBtn.addEventListener('click', async () => {
+      if (!rawImg) return;
+      syncBtn.innerText = 'Syncing...';
+      syncBtn.disabled = true;
+
+      const payloadFiles = [];
+
+      for (const target of targets) {
+        const blob = await renderTargetBlob(target);
+        const arrayBuffer = await blob.arrayBuffer();
+
+        payloadFiles.push({
+          path: `assets/icons/${target.name}`,
+          name: target.name,
+          type: target.isIco ? 'image/x-icon' : 'image/png',
+          data: arrayBuffer
+        });
+      }
+
+      // Dispatch to parent frame (EliteAppWrap main window)
+      window.parent.postMessage({
+        type: 'ELITE_APP_WRAP_ASSETS_SYNC',
+        files: payloadFiles
+      }, '*');
+
+      syncBtn.innerText = '✓ Synced to Workspace';
+      setTimeout(() => {
+        syncBtn.innerText = '⚡ Sync to Workspace';
+        syncBtn.disabled = false;
+      }, 2000);
+    });
+  </script>
+
+</body>
+</html>

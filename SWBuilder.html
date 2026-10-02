@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Worker Builder | ProductivePocket™ Dev/in/Dev</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-alpha: rgba(99, 102, 241, 0.15);
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .brand-text span {
+      color: var(--primary);
+    }
+
+    .badge {
+      background-color: var(--primary-alpha);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      flex: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (min-width: 1024px) {
+      .app-container {
+        grid-template-columns: 480px 1fr;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .app-container {
+        grid-template-columns: 520px 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    input[type="text"], select {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-alpha);
+    }
+
+    .strategy-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .strategy-card {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem;
+      background-color: var(--bg-dark);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .strategy-card:hover {
+      border-color: var(--primary);
+      background-color: var(--bg-card-hover);
+    }
+
+    .strategy-card.selected {
+      border-color: var(--primary);
+      background-color: var(--primary-alpha);
+    }
+
+    .strategy-card input[type="radio"] {
+      margin-top: 0.25rem;
+      accent-color: var(--primary);
+    }
+
+    .strategy-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .strategy-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .strategy-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .asset-input-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    .btn-accent {
+      background-color: var(--accent);
+    }
+
+    .btn-accent:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-danger-sm {
+      background-color: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn-danger-sm:hover {
+      color: var(--danger);
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .asset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .asset-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      transition: .2s;
+      border-radius: 22px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+      background-color: #fff;
+    }
+
+    .preview-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 500px;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #0b0f19;
+      padding: 0.75rem 1.25rem;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+    }
+
+    .code-title {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .code-title-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent);
+      border-radius: 50%;
+    }
+
+    .code-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .code-wrapper {
+      background-color: #050811;
+      border: 1px solid var(--border-color);
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+      padding: 1.25rem;
+      flex: 1;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    pre {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+
+    /* Custom Syntax Highlighting */
+    .token-comment { color: #64748b; font-style: italic; }
+    .token-keyword { color: #f472b6; font-weight: 600; }
+    .token-string { color: #34d399; }
+    .token-function { color: #60a5fa; }
+    .token-operator { color: #93c5fd; }
+    .token-variable { color: #f8fafc; }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--accent);
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">&lt;/&gt;</div>
+      <div class="brand-text">Service Worker <span>Builder</span></div>
+    </div>
+    <div class="badge">Dev/in/Dev Suite</div>
+  </header>
+
+  <main class="app-container">
+    
+    <!-- Left Pane: Controls -->
+    <div class="card">
+      <div class="card-title">
+        <span>Configuration & Strategy</span>
+      </div>
+
+      <!-- Cache Name Input -->
+      <div class="form-group">
+        <label for="cacheName">Cache Storage Identifier</label>
+        <input type="text" id="cacheName" value="app-cache-v1" placeholder="e.g. my-app-v1">
+      </div>
+
+      <!-- Strategy Selector -->
+      <div class="form-group">
+        <label>Primary Caching Strategy</label>
+        <div class="strategy-grid">
+          
+          <label class="strategy-card selected" id="strat-swr">
+            <input type="radio" name="strategy" value="swr" checked>
+            <div class="strategy-info">
+              <span class="strategy-name">Stale-While-Revalidate</span>
+              <span class="strategy-desc">Returns cached content instantly while fetching updates in background.</span>
+            </div>
+          </label>
+
+          <label class="strategy-card" id="strat-cache-first">
+            <input type="radio" name="strategy" value="cache-first">
+            <div class="strategy-info">
+              <span class="strategy-name">Cache First, Network Fallback</span>
+              <span class="strategy-desc">Ideal for static assets, fonts, and images to maximize speed.</span>
+            </div>
+          </label>
+
+          <label class="strategy-card" id="strat-network-first">
+            <input type="radio" name="strategy" value="network-first">
+            <div class="strategy-info">
+              <span class="strategy-name">Network First, Cache Fallback</span>
+              <span class="strategy-desc">Best for dynamic API endpoints and highly frequently updated HTML.</span>
+            </div>
+          </label>
+
+          <label class="strategy-card" id="strat-network-only">
+            <input type="radio" name="strategy" value="network-only">
+            <div class="strategy-info">
+              <span class="strategy-name">Network Only</span>
+              <span class="strategy-desc">Bypasses offline storage completely. Ensures zero caching.</span>
+            </div>
+          </label>
+
+          <label class="strategy-card" id="strat-cache-only">
+            <input type="radio" name="strategy" value="cache-only">
+            <div class="strategy-info">
+              <span class="strategy-name">Cache Only</span>
+              <span class="strategy-desc">Serves strictly pre-cached files. Fails if route missing from cache.</span>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- Core Shell Assets Manager -->
+      <div class="form-group">
+        <label>Pre-cached Core Assets</label>
+        <div class="asset-input-group">
+          <input type="text" id="assetInput" placeholder="Add path (e.g. /css/app.css)">
+          <button type="button" class="btn" id="addAssetBtn">Add</button>
+        </div>
+        <div class="asset-list" id="assetListContainer">
+          <!-- Assets rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Advanced Features -->
+      <div class="form-group">
+        <label>Advanced Lifecycle Rules</label>
+        
+        <div class="toggle-group" style="margin-bottom: 0.75rem;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 500;">Offline Fallback Page</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Route to serve when network fails</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggleFallback" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <input type="text" id="fallbackRoute" value="/offline.html" placeholder="e.g. /offline.html">
+
+        <div class="toggle-group" style="margin-top: 0.75rem;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 500;">Auto Skip Waiting</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Forces worker activation immediately</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggleSkipWaiting" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group" style="margin-top: 0.75rem;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 500;">Clients Claim</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Takes control of uncontrolled clients</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggleClientsClaim" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right Pane: Live Script Preview -->
+    <div class="preview-container">
+      <div class="code-header">
+        <div class="code-title">
+          <span class="code-title-dot"></span>
+          sw.js
+        </div>
+        <div class="code-actions">
+          <button class="btn btn-secondary" id="copyBtn">
+            Copy Script
+          </button>
+          <button class="btn btn-accent" id="downloadBtn">
+            Download sw.js
+          </button>
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <pre><code id="codeOutput"></code></pre>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastNotification">
+    <span>Action completed successfully!</span>
+  </div>
+
+  <script>
+    // Initial State Variables
+    let assets = ['/', 'index.html', 'manifest.json', 'styles.css', 'app.js'];
+
+    // UI Element References
+    const cacheNameInput = document.getElementById('cacheName');
+    const assetInput = document.getElementById('assetInput');
+    const addAssetBtn = document.getElementById('addAssetBtn');
+    const assetListContainer = document.getElementById('assetListContainer');
+    const toggleFallback = document.getElementById('toggleFallback');
+    const fallbackRouteInput = document.getElementById('fallbackRoute');
+    const toggleSkipWaiting = document.getElementById('toggleSkipWaiting');
+    const toggleClientsClaim = document.getElementById('toggleClientsClaim');
+    const codeOutput = document.getElementById('codeOutput');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const toast = document.getElementById('toastNotification');
+
+    // Strategy Option Handlers
+    const strategyCards = document.querySelectorAll('.strategy-card');
+
+    strategyCards.forEach(card => {
+      card.addEventListener('click', () => {
+        strategyCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const radio = card.querySelector('input[type="radio"]');
+        radio.checked = true;
+        renderCode();
+      });
+    });
+
+    // Asset List Actions
+    function renderAssets() {
+      assetListContainer.innerHTML = '';
+      assets.forEach((asset, index) => {
+        const item = document.createElement('div');
+        item.className = 'asset-item';
+        item.innerHTML = `
+          <span>${escapeHtml(asset)}</span>
+          <button class="btn-danger-sm" onclick="removeAsset(${index})">✕</button>
+        `;
+        assetListContainer.appendChild(item);
+      });
+      renderCode();
+    }
+
+    function addAsset() {
+      const val = assetInput.value.trim();
+      if (val && !assets.includes(val)) {
+        assets.push(val);
+        assetInput.value = '';
+        renderAssets();
+      }
+    }
+
+    function removeAsset(index) {
+      assets.splice(index, 1);
+      renderAssets();
+    }
+
+    addAssetBtn.addEventListener('click', addAsset);
+    assetInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addAsset();
+    });
+
+    // Helper HTML Escaper
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Toggle Fallback Route Field
+    toggleFallback.addEventListener('change', () => {
+      fallbackRouteInput.style.display = toggleFallback.checked ? 'block' : 'none';
+      renderCode();
+    });
+
+    // Dynamic Event Listeners for inputs
+    [cacheNameInput, fallbackRouteInput, toggleSkipWaiting, toggleClientsClaim].forEach(element => {
+      element.addEventListener('input', renderCode);
+      element.addEventListener('change', renderCode);
+    });
+
+    function generateServiceWorkerJS() {
+      const cacheName = cacheNameInput.value.trim() || 'app-cache-v1';
+      const strategy = document.querySelector('input[name="strategy"]:checked').value;
+      const enableFallback = toggleFallback.checked;
+      const fallbackRoute = fallbackRouteInput.value.trim() || '/offline.html';
+      const skipWaiting = toggleSkipWaiting.checked;
+      const clientsClaim = toggleClientsClaim.checked;
+
+      let combinedAssets = [...assets];
+      if (enableFallback && fallbackRoute && !combinedAssets.includes(fallbackRoute)) {
+        combinedAssets.push(fallbackRoute);
+      }
+
+      const assetsFormatted = JSON.stringify(combinedAssets, null, 2);
+
+      let fetchLogic = '';
+
+      switch (strategy) {
+        case 'swr':
+          fetchLogic = `// Strategy: Stale-While-Revalidate
+  event.respondWith(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request).then(cachedResponse => {
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          if (networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => {
+          ${enableFallback ? `if (event.request.mode === 'navigate') return caches.match('${fallbackRoute}');` : ''}
+        });
+        return cachedResponse || fetchPromise;
+      });
+    })
+  );`;
+          break;
+
+        case 'cache-first':
+          fetchLogic = `// Strategy: Cache First, Network Fallback
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      if (response) {
+        return response;
+      }
+      return fetch(event.request).then(networkResponse => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
+        return networkResponse;
+      }).catch(() => {
+        ${enableFallback ? `if (event.request.mode === 'navigate') return caches.match('${fallbackRoute}');` : ''}
+      });
+    })
+  );`;
+          break;
+
+        case 'network-first':
+          fetchLogic = `// Strategy: Network First, Cache Fallback
+  event.respondWith(
+    fetch(event.request).then(networkResponse => {
+      if (networkResponse.status === 200) {
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
+      }
+      return networkResponse;
+    }).catch(() => {
+      return caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        ${enableFallback ? `if (event.request.mode === 'navigate') return caches.match('${fallbackRoute}');` : ''}
+      });
+    })
+  );`;
+          break;
+
+        case 'network-only':
+          fetchLogic = `// Strategy: Network Only
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      ${enableFallback ? `if (event.request.mode === 'navigate') return caches.match('${fallbackRoute}');` : ''}
+    })
+  );`;
+          break;
+
+        case 'cache-only':
+          fetchLogic = `// Strategy: Cache Only
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      if (response) return response;
+      ${enableFallback ? `if (event.request.mode === 'navigate') return caches.match('${fallbackRoute}');` : ''}
+    })
+  );`;
+          break;
+      }
+
+      return `/**
+ * Service Worker Generated via ProductivePocket™ Dev/in/Dev
+ * Strategy: ${strategy.toUpperCase()}
+ */
+
+const CACHE_NAME = '${cacheName}';
+const PRECACHE_ASSETS = ${assetsFormatted};
+
+// Lifecycle: Install
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('[Service Worker] Pre-caching Core Shell Assets');
+        return cache.addAll(PRECACHE_ASSETS);
+      })
+      ${skipWaiting ? '.then(() => self.skipWaiting())' : ''}
+  );
+});
+
+// Lifecycle: Activate (Automated Cache Maintenance)
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            console.log('[Service Worker] Purging Outdated Cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    })${clientsClaim ? '.then(() => self.clients.claim())' : ''}
+  );
+});
+
+// Lifecycle: Fetch Interception
+self.addEventListener('fetch', event => {
+  // Ignore non-GET requests
+  if (event.request.method !== 'GET') return;
+
+  ${fetchLogic}
+});`;
+    }
+
+    function syntaxHighlight(code) {
+      return escapeHtml(code)
+        .replace(/(\/\/.+)/g, '<span class="token-comment">$1</span>')
+        .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="token-comment">$1</span>')
+        .replace(/\b(const|let|var|function|return|if|else|self|addEventListener)\b/g, '<span class="token-keyword">$1</span>')
+        .replace(/(['"].*?['"])/g, '<span class="token-string">$1</span>')
+        .replace(/\b(console|caches|event|Promise)\b/g, '<span class="token-function">$1</span>');
+    }
+
+    function renderCode() {
+      const rawCode = generateServiceWorkerJS();
+      codeOutput.innerHTML = syntaxHighlight(rawCode);
+    }
+
+    function showToast(message) {
+      toast.querySelector('span').innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    copyBtn.addEventListener('click', () => {
+      const code = generateServiceWorkerJS();
+      
+      // Fallback copy strategy
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Script copied to clipboard!');
+      } catch (err) {
+        showToast('Failed to copy code');
+      }
+      document.body.removeChild(textarea);
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const code = generateServiceWorkerJS();
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sw.js';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloading sw.js...');
+    });
+
+    // Initialize View
+    renderAssets();
+  </script>
+</body>
+</html>

@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeLab — Typography Studio & Modular Scale Testing Lab</title>
+    <style>
+        /* CSS Reset & Custom Properties */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-light: rgba(99, 102, 241, 0.15);
+            --success: #10b981;
+            
+            /* Calculated Dynamic Type Variables */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --base-size: 16px;
+            --scale-ratio: 1.25;
+            --font-weight: 400;
+            --line-height: 1.5;
+            --letter-spacing: 0em;
+            
+            /* Font Axes */
+            --font-wght: 400;
+            --font-wdth: 100;
+            --font-slnt: 0;
+            --font-ital: 0;
+
+            /* Calculated Modular Sizes */
+            --text-xs: 0.8rem;
+            --text-sm: 0.9rem;
+            --text-base: 1rem;
+            --text-h3: 1.25rem;
+            --text-h2: 1.563rem;
+            --text-h1: 1.953rem;
+            --text-display: 2.441rem;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Header Bar */
+        header {
+            background-color: #0b1329;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.85rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .brand-sub {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.85rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Main Workspace Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            flex: 1;
+            height: calc(100vh - 57px);
+            overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow: visible;
+            }
+        }
+
+        /* Control Panel Sidebar */
+        .sidebar {
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .control-group-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Controls */
+        label {
+            font-size: 0.825rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .value-badge {
+            color: var(--text-main);
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.55rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        /* File Drop Zone */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(15, 23, 42, 0.2);
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .drop-zone-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .drop-zone-text strong {
+            color: var(--accent);
+        }
+
+        /* Sliders */
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: var(--border-color);
+            border-radius: 3px;
+            outline: none;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        /* Toggle Switches */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            transition: .2s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        /* Live Preview Stage */
+        .stage-container {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #0b1329;
+        }
+
+        .stage-toolbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.6rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--bg-main);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.45rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            color: #fff;
+        }
+
+        .stage-viewport {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2.5rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Specimen Stage Themes */
+        .stage-viewport.theme-dark {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .stage-viewport.theme-light {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* Live Specimen Elements */
+        .specimen-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            font-family: var(--font-family-primary);
+            font-size: var(--base-size);
+            line-height: var(--line-height);
+            letter-spacing: var(--letter-spacing);
+            font-weight: var(--font-weight);
+            font-variation-settings: "wght" var(--font-wght), "wdth" var(--font-wdth), "slnt" var(--font-slnt), "ital" var(--font-ital);
+        }
+
+        .editable {
+            outline: none;
+            border: 1px transparent dashed;
+            border-radius: 4px;
+            padding: 0.2rem 0.4rem;
+            margin: -0.2rem -0.4rem;
+            transition: border-color 0.2s;
+        }
+
+        .editable:hover, .editable:focus {
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .specimen-display {
+            font-size: var(--text-display);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .specimen-h1 {
+            font-size: var(--text-h1);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .specimen-h2 {
+            font-size: var(--text-h2);
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        .specimen-h3 {
+            font-size: var(--text-h3);
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .specimen-lead {
+            font-size: calc(var(--text-base) * 1.25);
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .specimen-body {
+            font-size: var(--text-base);
+            line-height: var(--line-height);
+        }
+
+        .specimen-small {
+            font-size: var(--text-sm);
+            opacity: 0.85;
+        }
+
+        .specimen-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: var(--text-sm);
+            background: rgba(150, 150, 150, 0.1);
+            padding: 1rem;
+            border-radius: 6px;
+            white-space: pre-wrap;
+        }
+
+        .specimen-components {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .sample-btn {
+            font-family: inherit;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Scale Breakdown Drawer */
+        .export-drawer {
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            max-height: 260px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer-header {
+            padding: 0.6rem 1.25rem;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .code-output {
+            background-color: #080d1a;
+            color: #a5b4fc;
+            padding: 1rem 1.25rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8rem;
+            overflow-y: auto;
+            white-space: pre;
+            flex: 1;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--success);
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <div class="brand">
+            <span class="brand-badge">Dev/in/Dev</span>
+            <div class="brand-title">
+                TypeLab <span class="brand-sub">| ProductivePocket™ Typography Studio</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="btn-export-css">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                Copy CSS Rules
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+
+            <!-- Font Source -->
+            <div class="control-group">
+                <div class="control-group-title">1. Font Source</div>
+                
+                <!-- Drag and Drop Zone -->
+                <div class="drop-zone" id="drop-zone">
+                    <div class="drop-zone-text">
+                        <strong>Drag & Drop</strong> local font<br>
+                        <span style="font-size:0.75rem;">(.woff2, .woff, .ttf, .otf)</span>
+                    </div>
+                    <input type="file" id="font-file-input" accept=".woff2,.woff,.ttf,.otf" style="display: none;">
+                </div>
+
+                <label style="margin-top:0.4rem;">System Font Stacks</label>
+                <select id="select-system-stack">
+                    <option value='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'>Modern Sans (System UI)</option>
+                    <option value='Inter, "SF Pro Display", -apple-system, sans-serif'>Neo-Grotesque</option>
+                    <option value='Georgia, Cambria, "Times New Roman", Times, serif'>Editorial Serif</option>
+                    <option value='"Merriweather", "Book Antiqua", Palatino, serif'>Humanist Serif</option>
+                    <option value='"SF Mono", Monaco, Consolas, "Liberation Mono", monospace'>Monospace Tech</option>
+                    <option value='Impact, "Arial Black", sans-serif'>Modern Display / Heavy</option>
+                </select>
+            </div>
+
+            <!-- Type Scale Generator -->
+            <div class="control-group">
+                <div class="control-group-title">2. Modular Type Scale</div>
+                
+                <label>Scale Preset Ratio</label>
+                <select id="select-scale-ratio">
+                    <option value="1.067">Minor Second (1.067)</option>
+                    <option value="1.125">Major Second (1.125)</option>
+                    <option value="1.200">Minor Third (1.200)</option>
+                    <option value="1.250" selected>Major Third (1.250)</option>
+                    <option value="1.333">Perfect Fourth (1.333)</option>
+                    <option value="1.414">Augmented Fourth (1.414)</option>
+                    <option value="1.500">Perfect Fifth (1.500)</option>
+                    <option value="1.618">Golden Ratio (1.618)</option>
+                </select>
+
+                <label>Base Size <span class="value-badge" id="val-base-size">16px</span></label>
+                <input type="range" id="input-base-size" min="12" max="24" value="16" step="1">
+
+                <div class="toggle-row" style="margin-top: 0.4rem;">
+                    <span style="font-size:0.825rem; color: var(--text-muted);">Fluid CSS clamp() Scale</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-fluid-type" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Global Type Properties -->
+            <div class="control-group">
+                <div class="control-group-title">3. Layout & Hierarchy</div>
+                
+                <label>Line Height <span class="value-badge" id="val-line-height">1.5</span></label>
+                <input type="range" id="input-line-height" min="1.0" max="2.2" value="1.5" step="0.05">
+
+                <label>Letter Spacing <span class="value-badge" id="val-letter-spacing">0em</span></label>
+                <input type="range" id="input-letter-spacing" min="-0.05" max="0.25" value="0" step="0.005">
+
+                <label>Font Weight <span class="value-badge" id="val-font-weight">400</span></label>
+                <input type="range" id="input-font-weight" min="100" max="900" value="400" step="100">
+            </div>
+
+            <!-- Variable Font Axes -->
+            <div class="control-group">
+                <div class="control-group-title">4. Variable Font Axes</div>
+                
+                <label>Weight (wght) <span class="value-badge" id="val-axis-wght">400</span></label>
+                <input type="range" id="axis-wght" min="100" max="900" value="400" step="1">
+
+                <label>Width (wdth) <span class="value-badge" id="val-axis-wdth">100%</span></label>
+                <input type="range" id="axis-wdth" min="50" max="150" value="100" step="1">
+
+                <label>Slant (slnt) <span class="value-badge" id="val-axis-slnt">0°</span></label>
+                <input type="range" id="axis-slnt" min="-15" max="0" value="0" step="1">
+            </div>
+
+        </aside>
+
+        <!-- Live Preview Stage -->
+        <main class="stage-container">
+            
+            <!-- Stage Top Toolbar -->
+            <div class="stage-toolbar">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn" id="btn-preset-lorem">Lorem Ipsum</button>
+                    <button class="btn" id="btn-preset-dev">Dev Specimen</button>
+                    <button class="btn" id="btn-preset-pangram">Pangrams</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Stage Theme:</span>
+                    <button class="btn" id="btn-theme-toggle">🌙 Dark Mode</button>
+                </div>
+            </div>
+
+            <!-- Editable Specimen Stage -->
+            <div class="stage-viewport theme-dark" id="stage-viewport">
+                <div class="specimen-wrapper">
+                    
+                    <div class="editable specimen-display" contenteditable="true" id="spec-display">
+                        Modular Typography Systems
+                    </div>
+
+                    <div class="editable specimen-h1" contenteditable="true" id="spec-h1">
+                        H1: Crisp, scalable, and responsive web type
+                    </div>
+
+                    <div class="editable specimen-h2" contenteditable="true" id="spec-h2">
+                        H2: Engineered for Productive UI Workflows
+                    </div>
+
+                    <div class="editable specimen-h3" contenteditable="true" id="spec-h3">
+                        H3: Fine-tune readability, vertical rhythm, and contrast in real-time
+                    </div>
+
+                    <div class="editable specimen-lead" contenteditable="true" id="spec-lead">
+                        TypeLab provides a privacy-first, zero-dependency environment for testing typography, custom local web fonts, and dynamic CSS fluid scale systems.
+                    </div>
+
+                    <div class="editable specimen-body" contenteditable="true" id="spec-body">
+                        Good typography is non-negotiable in developer tools and modern web applications. By utilizing fluid modular scales via native CSS clamp() functions, layout typography scales seamlessly across viewport boundaries without relying on bulky JavaScript recalculations or rigid media queries.
+                    </div>
+
+                    <div class="editable specimen-small" contenteditable="true" id="spec-small">
+                        CAPTION / SMALL TEXT — Scaled relative to the computed base design token system.
+                    </div>
+
+                    <div class="specimen-code editable" contenteditable="true">
+// CSS Custom Properties Example
+:root {
+  --font-primary: 'Custom Loaded Font', sans-serif;
+  --text-base: clamp(1.00rem, 0.95rem + 0.25vw, 1.125rem);
+}</div>
+
+                    <div class="specimen-components">
+                        <button class="sample-btn">Primary Action</button>
+                        <button class="btn">Secondary Button</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CSS Export Drawer -->
+            <div class="export-drawer">
+                <div class="drawer-header">
+                    <span class="drawer-title">Generated CSS Custom Properties</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted);" id="font-status-label">Using System Font Stack</span>
+                </div>
+                <pre class="code-output" id="css-output-block"></pre>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>CSS Snippet copied to clipboard!</span>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // DOM Element References
+            const root = document.documentElement;
+            const dropZone = document.getElementById('drop-zone');
+            const fontFileInput = document.getElementById('font-file-input');
+            const selectSystemStack = document.getElementById('select-system-stack');
+            const selectScaleRatio = document.getElementById('select-scale-ratio');
+            const inputBaseSize = document.getElementById('input-base-size');
+            const toggleFluidType = document.getElementById('toggle-fluid-type');
+            const inputLineHeight = document.getElementById('input-line-height');
+            const inputLetterSpacing = document.getElementById('input-letter-spacing');
+            const inputFontWeight = document.getElementById('input-font-weight');
+            
+            // Axis Controls
+            const axisWght = document.getElementById('axis-wght');
+            const axisWdth = document.getElementById('axis-wdth');
+            const axisSlnt = document.getElementById('axis-slnt');
+
+            // UI Badges
+            const valBaseSize = document.getElementById('val-base-size');
+            const valLineHeight = document.getElementById('val-line-height');
+            const valLetterSpacing = document.getElementById('val-letter-spacing');
+            const valFontWeight = document.getElementById('val-font-weight');
+            const valAxisWght = document.getElementById('val-axis-wght');
+            const valAxisWdth = document.getElementById('val-axis-wdth');
+            const valAxisSlnt = document.getElementById('val-axis-slnt');
+
+            // Stage Controls
+            const stageViewport = document.getElementById('stage-viewport');
+            const btnThemeToggle = document.getElementById('btn-theme-toggle');
+            const cssOutputBlock = document.getElementById('css-output-block');
+            const btnExportCss = document.getElementById('btn-export-css');
+            const toast = document.getElementById('toast');
+            const fontStatusLabel = document.getElementById('font-status-label');
+
+            // State Tracking
+            let customFontFaceRule = '';
+            let customFontFamilyName = '';
+
+            // Update Calculations & CSS Variables
+            function updateTypography() {
+                const baseSize = parseInt(inputBaseSize.value, 10);
+                const ratio = parseFloat(selectScaleRatio.value);
+                const lineHeight = inputLineHeight.value;
+                const letterSpacing = inputLetterSpacing.value + 'em';
+                const fontWeight = inputFontWeight.value;
+                const isFluid = toggleFluidType.checked;
+
+                // Update Badges
+                valBaseSize.textContent = baseSize + 'px';
+                valLineHeight.textContent = lineHeight;
+                valLetterSpacing.textContent = letterSpacing;
+                valFontWeight.textContent = fontWeight;
+                valAxisWght.textContent = axisWght.value;
+                valAxisWdth.textContent = axisWdth.value + '%';
+                valAxisSlnt.textContent = axisSlnt.value + '°';
+
+                // Calculate Steps
+                const xs = (baseSize / Math.pow(ratio, 2)).toFixed(2);
+                const sm = (baseSize / ratio).toFixed(2);
+                const base = baseSize;
+                const h3 = (baseSize * ratio).toFixed(2);
+                const h2 = (baseSize * Math.pow(ratio, 2)).toFixed(2);
+                const h1 = (baseSize * Math.pow(ratio, 3)).toFixed(2);
+                const display = (baseSize * Math.pow(ratio, 4)).toFixed(2);
+
+                // Helper to format clamp or rem
+                const formatVal = (pxVal) => {
+                    const remVal = (pxVal / 16).toFixed(3);
+                    if (!isFluid) return `${remVal}rem`;
+                    const minRem = (remVal * 0.85).toFixed(3);
+                    const maxRem = (remVal * 1.15).toFixed(3);
+                    return `clamp(${minRem}rem, ${remVal}rem + 0.5vw, ${maxRem}rem)`;
+                };
+
+                // Apply Variables to Root Stage
+                root.style.setProperty('--base-size', `${baseSize}px`);
+                root.style.setProperty('--line-height', lineHeight);
+                root.style.setProperty('--letter-spacing', letterSpacing);
+                root.style.setProperty('--font-weight', fontWeight);
+                root.style.setProperty('--font-wght', axisWght.value);
+                root.style.setProperty('--font-wdth', axisWdth.value);
+                root.style.setProperty('--font-slnt', axisSlnt.value);
+
+                root.style.setProperty('--text-xs', formatVal(xs));
+                root.style.setProperty('--text-sm', formatVal(sm));
+                root.style.setProperty('--text-base', formatVal(base));
+                root.style.setProperty('--text-h3', formatVal(h3));
+                root.style.setProperty('--text-h2', formatVal(h2));
+                root.style.setProperty('--text-h1', formatVal(h1));
+                root.style.setProperty('--text-display', formatVal(display));
+
+                // Font Family Selection
+                const selectedFont = customFontFamilyName ? `'${customFontFamilyName}', sans-serif` : selectSystemStack.value;
+                root.style.setProperty('--font-family-primary', selectedFont);
+
+                // Output CSS Snippet Block
+                generateCSSOutput(selectedFont, {
+                    xs: formatVal(xs),
+                    sm: formatVal(sm),
+                    base: formatVal(base),
+                    h3: formatVal(h3),
+                    h2: formatVal(h2),
+                    h1: formatVal(h1),
+                    display: formatVal(display),
+                    lineHeight,
+                    letterSpacing,
+                    fontWeight,
+                    wght: axisWght.value,
+                    wdth: axisWdth.value,
+                    slnt: axisSlnt.value
+                });
+            }
+
+            // Generate Copyable CSS Block
+            function generateCSSOutput(fontFamily, scale) {
+                let css = '';
+                if (customFontFaceRule) {
+                    css += `/* Local Uploaded Font Face */\n${customFontFaceRule}\n\n`;
+                }
+
+                css += `:root {\n`;
+                css += `  /* Typography Design Tokens */\n`;
+                css += `  --font-primary: ${fontFamily};\n`;
+                css += `  --line-height-body: ${scale.lineHeight};\n`;
+                css += `  --letter-spacing-body: ${scale.letterSpacing};\n`;
+                css += `  --font-weight-body: ${scale.fontWeight};\n\n`;
+
+                css += `  /* Variable Font Axes */\n`;
+                css += `  --font-wght: ${scale.wght};\n`;
+                css += `  --font-wdth: ${scale.wdth};\n`;
+                css += `  --font-slnt: ${scale.slnt};\n\n`;
+
+                css += `  /* Modular Type Scale (Ratio: ${selectScaleRatio.value}) */\n`;
+                css += `  --text-xs: ${scale.xs};\n`;
+                css += `  --text-sm: ${scale.sm};\n`;
+                css += `  --text-base: ${scale.base};\n`;
+                css += `  --text-h3: ${scale.h3};\n`;
+                css += `  --text-h2: ${scale.h2};\n`;
+                css += `  --text-h1: ${scale.h1};\n`;
+                css += `  --text-display: ${scale.display};\n`;
+                css += `}`;
+
+                cssOutputBlock.textContent = css;
+            }
+
+            // Handle Font Upload via FontFace API
+            function handleFontFile(file) {
+                if (!file) return;
+
+                const fontName = file.name.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const buffer = e.target.result;
+                    const fontFace = new FontFace(fontName, buffer);
+
+                    fontFace.load().then((loadedFont) => {
+                        document.fonts.add(loadedFont);
+                        customFontFamilyName = fontName;
+                        customFontFaceRule = `@font-face {\n  font-family: '${fontName}';\n  src: url('${file.name}') format('woff2');\n  font-display: swap;\n}`;
+                        
+                        fontStatusLabel.textContent = `Active: ${file.name}`;
+                        fontStatusLabel.style.color = '#10b981';
+                        
+                        updateTypography();
+                        showToast(`Loaded font: ${file.name}`);
+                    }).catch((err) => {
+                        alert('Error loading font file: ' + err.message);
+                    });
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+
+            // Drag and Drop Event Listeners
+            dropZone.addEventListener('click', () => fontFileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length) {
+                    handleFontFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            fontFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFontFile(e.target.files[0]);
+                }
+            });
+
+            // Preset Controls
+            selectSystemStack.addEventListener('change', () => {
+                customFontFamilyName = '';
+                customFontFaceRule = '';
+                fontStatusLabel.textContent = 'Using System Font Stack';
+                fontStatusLabel.style.color = 'var(--text-muted)';
+                updateTypography();
+            });
+
+            [selectScaleRatio, inputBaseSize, toggleFluidType, inputLineHeight, inputLetterSpacing, inputFontWeight, axisWght, axisWdth, axisSlnt]
+                .forEach(element => element.addEventListener('input', updateTypography));
+
+            // Theme Toggle
+            btnThemeToggle.addEventListener('click', () => {
+                if (stageViewport.classList.contains('theme-dark')) {
+                    stageViewport.classList.remove('theme-dark');
+                    stageViewport.classList.add('theme-light');
+                    btnThemeToggle.textContent = '☀️ Light Mode';
+                } else {
+                    stageViewport.classList.remove('theme-light');
+                    stageViewport.classList.add('theme-dark');
+                    btnThemeToggle.textContent = '🌙 Dark Mode';
+                }
+            });
+
+            // Toast Alert Helper
+            function showToast(msg) {
+                if (msg) toast.querySelector('span').textContent = msg;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2500);
+            }
+
+            // Copy CSS Block
+            btnExportCss.addEventListener('click', () => {
+                const codeText = cssOutputBlock.textContent;
+                
+                // Native fallback clipboard handler
+                const textarea = document.createElement('textarea');
+                textarea.value = codeText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                showToast('CSS Snippet copied to clipboard!');
+            });
+
+            // Specimen Content Preset Loaders
+            document.getElementById('btn-preset-lorem').addEventListener('click', () => {
+                document.getElementById('spec-display').textContent = 'Lorem Ipsum Dolor';
+                document.getElementById('spec-h1').textContent = 'Consectetur adipiscing elit sed do eiusmod';
+                document.getElementById('spec-lead').textContent = 'Tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
+                document.getElementById('spec-body').textContent = 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.';
+            });
+
+            document.getElementById('btn-preset-dev').addEventListener('click', () => {
+                document.getElementById('spec-display').textContent = 'Modular Typography Systems';
+                document.getElementById('spec-h1').textContent = 'H1: Crisp, scalable, and responsive web type';
+                document.getElementById('spec-lead').textContent = 'TypeLab provides a privacy-first, zero-dependency environment for testing typography.';
+                document.getElementById('spec-body').textContent = 'Good typography is non-negotiable in developer tools and modern web applications. By utilizing fluid modular scales via native CSS clamp() functions.';
+            });
+
+            document.getElementById('btn-preset-pangram').addEventListener('click', () => {
+                document.getElementById('spec-display').textContent = 'The Quick Brown Fox';
+                document.getElementById('spec-h1').textContent = 'Jumps over the lazy dog near the riverbank';
+                document.getElementById('spec-lead').textContent = 'Sphinx of black quartz, judge my vow. Pack my box with five dozen liquor jugs.';
+                document.getElementById('spec-body').textContent = 'How vexingly quick daft zebras jump! Two driven jocks help fax my big quiz. Quick wafting zephyrs vex bold Jim.';
+            });
+
+            // Initial Kickoff
+            updateTypography();
+        });
+    </script>
+</body>
+</html>

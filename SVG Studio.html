@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Studio - Privacy-First Vector Optimizer</title>
+  <style>
+    :root {
+      --bg-base: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-surface-elevated: #334155;
+      --bg-input: #020617;
+      
+      --border-color: #334155;
+      --border-focus: #6366f1;
+
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --accent-primary: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-light: rgba(99, 102, 241, 0.15);
+
+      --success-color: #10b981;
+      --success-light: rgba(16, 185, 129, 0.15);
+      --warning-color: #f59e0b;
+
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --transition: all 0.2s ease-in-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-surface-elevated);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      background: linear-gradient(135deg, var(--accent-primary), #38bdf8);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+    }
+
+    .app-workspace {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+      .app-workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        overflow-y: auto;
+      }
+    }
+
+    /* Left Pane - Controls & Options */
+    .control-pane {
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .pane-section {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Dropzone Styling */
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      background: var(--bg-base);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .dropzone-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      color: var(--accent-primary);
+    }
+
+    .dropzone-text {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .dropzone-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Form & Option Controls */
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .toggle-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-option input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      margin-top: 2px;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .toggle-option input[type="checkbox"]:checked {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .toggle-option input[type="checkbox"]:checked::before {
+      content: "✓";
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .toggle-label {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .toggle-desc {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Sub-inputs */
+    .sub-control {
+      margin-top: 0.5rem;
+      margin-left: 1.8rem;
+    }
+
+    .text-input, .select-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+
+    .text-input:focus, .select-input:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px var(--accent-light);
+    }
+
+    textarea.text-input {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    /* Right Pane - Preview & Output Workspace */
+    .preview-pane {
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .preview-toolbar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.6rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .segmented-control {
+      display: inline-flex;
+      background: var(--bg-input);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .segmented-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .segmented-btn.active {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* Live Preview Stage */
+    .stage-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 280px;
+    }
+
+    /* Checkerboard / Grid backgrounds */
+    .stage-bg-checkers {
+      background-color: #1e293b;
+      background-image: 
+        linear-gradient(45deg, #0f172a 25%, transparent 25%), 
+        linear-gradient(-45deg, #0f172a 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #0f172a 75%), 
+        linear-gradient(-45deg, transparent 75%, #0f172a 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .stage-bg-dark {
+      background-color: #090d16;
+    }
+
+    .stage-bg-light {
+      background-color: #f8fafc;
+    }
+
+    .svg-stage {
+      max-width: 80%;
+      max-height: 80%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease-out;
+      transform-origin: center center;
+    }
+
+    .svg-stage svg {
+      max-width: 100%;
+      max-height: 100%;
+      height: auto;
+      width: auto;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+    }
+
+    .output-panel {
+      height: 280px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metrics-header {
+      padding: 0.6rem 1.25rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--success-light);
+      color: var(--success-color);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .size-info {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .code-container {
+      flex: 1;
+      position: relative;
+    }
+
+    .code-editor {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-input);
+      color: #7dd3fc;
+      border: none;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      resize: none;
+      white-space: pre;
+      overflow: auto;
+    }
+
+    .code-editor:focus {
+      outline: none;
+    }
+
+    /* Buttons & Actions */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: #475569;
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--accent-primary);
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Empty state overlay */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L11 18l7-5z"></path>
+          <path d="M2 2l7.586 7.586"></path>
+          <circle cx="11" cy="11" r="2"></circle>
+        </svg>
+      </div>
+      <span>SVG Studio</span>
+      <span class="brand-badge">Micro-Utility</span>
+    </div>
+    <div>
+      <button class="btn" id="btn-reset-default" title="Reset raw input & settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+        Reset Workspace
+      </button>
+    </div>
+  </header>
+
+  <main class="app-workspace">
+    
+    <!-- LEFT PANE: Input & Optimization Rules -->
+    <section class="control-pane">
+      
+      <!-- Dropzone & Raw Input -->
+      <div class="pane-section">
+        <div class="section-title">
+          <span>1. Source Vector</span>
+        </div>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept=".svg,image/svg+xml">
+          <div class="dropzone-icon">📥</div>
+          <div class="dropzone-text">Drop SVG file here or click to browse</div>
+          <div class="dropzone-subtext">Supports vector graphics exported from Figma, Illustrator, Sketch</div>
+        </div>
+        
+        <div style="margin-top: 1rem;">
+          <textarea class="text-input" id="raw-input" placeholder="Or paste raw <svg> markup here..."></textarea>
+        </div>
+      </div>
+
+      <!-- Optimization Toggles -->
+      <div class="pane-section">
+        <div class="section-title">
+          <span>2. Sanitization & Optimization</span>
+        </div>
+        <div class="option-group">
+          
+          <!-- Strip Metadata -->
+          <label class="toggle-option">
+            <input type="checkbox" id="opt-strip-metadata" checked>
+            <div>
+              <div class="toggle-label">Strip XML & Metadata</div>
+              <div class="toggle-desc">Removes &lt;?xml?&gt;, &lt;!DOCTYPE&gt;, comments, Inkscape, Sodipodi & Sketch properties.</div>
+            </div>
+          </label>
+
+          <!-- Normalize Dimensions / ViewBox -->
+          <label class="toggle-option">
+            <input type="checkbox" id="opt-normalize-viewbox" checked>
+            <div>
+              <div class="toggle-label">Responsive ViewBox Conversion</div>
+              <div class="toggle-desc">Strips fixed width/height attributes and guarantees a fluid viewBox rule.</div>
+            </div>
+          </label>
+
+          <!-- ID & Class Sanitization -->
+          <label class="toggle-option">
+            <input type="checkbox" id="opt-sanitize-ids" checked>
+            <div>
+              <div class="toggle-label">ID & Class Prefixing / Cleanup</div>
+              <div class="toggle-desc">Prefixes IDs and classes with a unique hash to prevent inline DOM styling collisions.</div>
+            </div>
+          </label>
+          <div class="sub-control" id="id-prefix-container">
+            <input type="text" class="text-input" id="opt-id-prefix" placeholder="Prefix (e.g. icon-a3b)" value="svg-studio-">
+          </div>
+
+          <!-- Color Replacer -->
+          <label class="toggle-option">
+            <input type="checkbox" id="opt-color-replace">
+            <div>
+              <div class="toggle-label">Color Standardization</div>
+              <div class="toggle-desc">Convert hardcoded fills/strokes to currentColor or a custom CSS variable.</div>
+            </div>
+          </label>
+          <div class="sub-control" id="color-replace-container" style="display: none;">
+            <select class="select-input" id="opt-color-mode">
+              <option value="currentColor">Replace fills & strokes with 'currentColor'</option>
+              <option value="var">Replace with custom CSS Variable</option>
+            </select>
+            <input type="text" class="text-input" id="opt-custom-var" placeholder="var(--icon-color)" value="var(--icon-color)" style="margin-top: 0.5rem; display: none;">
+          </div>
+
+          <!-- Precision & Whitespace -->
+          <label class="toggle-option">
+            <input type="checkbox" id="opt-clean-whitespace" checked>
+            <div>
+              <div class="toggle-label">Minify Whitespace & Empty Tags</div>
+              <div class="toggle-desc">Removes redundant spaces, newlines, and unused metadata groups.</div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANE: Visual Stage & Clean Output -->
+    <section class="preview-pane">
+      
+      <!-- Toolbar -->
+      <div class="preview-toolbar">
+        <div class="toolbar-group">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Background:</span>
+          <div class="segmented-control" id="bg-selector">
+            <button class="segmented-btn active" data-bg="stage-bg-checkers">Checkers</button>
+            <button class="segmented-btn" data-bg="stage-bg-dark">Dark</button>
+            <button class="segmented-btn" data-bg="stage-bg-light">Light</button>
+          </div>
+        </div>
+
+        <div class="toolbar-group">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Zoom:</span>
+          <button class="btn" id="btn-zoom-out" style="padding: 2px 8px;">-</button>
+          <span id="zoom-level" style="font-size: 0.8rem; font-family: var(--font-mono); width: 40px; text-align: center;">100%</span>
+          <button class="btn" id="btn-zoom-in" style="padding: 2px 8px;">+</button>
+          <button class="btn" id="btn-zoom-reset" style="padding: 2px 8px;">Reset</button>
+        </div>
+      </div>
+
+      <!-- Live Interactive Stage -->
+      <div class="stage-container stage-bg-checkers" id="stage-container">
+        <div class="svg-stage" id="svg-stage">
+          <div class="empty-state" id="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <div>No SVG loaded yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Code Panel & Action Controls -->
+      <div class="output-panel">
+        <div class="metrics-header">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="metric-badge" id="savings-badge">
+              <span>Saved 0%</span>
+            </div>
+            <div class="size-info" id="size-info">
+              0 B → 0 B
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn" id="btn-copy-uri" title="Copy as CSS Background-Image Data URI">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              Data URI
+            </button>
+            <button class="btn btn-primary" id="btn-copy-code">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              Copy Clean SVG
+            </button>
+            <button class="btn" id="btn-download">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download
+            </button>
+          </div>
+        </div>
+        <div class="code-container">
+          <textarea class="code-editor" id="clean-output" readonly placeholder="Sanitized SVG output code will appear here..."></textarea>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Toast Container -->
+  <div class="toast" id="toast">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg">Action performed successfully</span>
+  </div>
+
+  <script>
+    const DEFAULT_SVG = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" xmlns:sketch="http://www.sketchapp.com/sketch" sketch:type="MSPage">
+  <!-- Generated by Vector Tool v1.0 -->
+  <title>Sample Star Vector</title>
+  <g id="Layer_1" sketch:type="MSLayerGroup" fill="#6366f1">
+    <polygon id="Star" points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36" stroke="#38bdf8" stroke-width="4"/>
+  </g>
+</svg>`;
+
+    // State Variables
+    let rawSVGCode = DEFAULT_SVG;
+    let sanitizedSVGCode = '';
+    let currentZoom = 1.0;
+
+    // Element References
+    const rawInput = document.getElementById('raw-input');
+    const cleanOutput = document.getElementById('clean-output');
+    const svgStage = document.getElementById('svg-stage');
+    const stageContainer = document.getElementById('stage-container');
+    const fileInput = document.getElementById('file-input');
+    const dropzone = document.getElementById('dropzone');
+
+    // Controls
+    const optStripMetadata = document.getElementById('opt-strip-metadata');
+    const optNormalizeViewbox = document.getElementById('opt-normalize-viewbox');
+    const optSanitizeIds = document.getElementById('opt-sanitize-ids');
+    const optIdPrefix = document.getElementById('opt-id-prefix');
+    const idPrefixContainer = document.getElementById('id-prefix-container');
+    const optColorReplace = document.getElementById('opt-color-replace');
+    const colorReplaceContainer = document.getElementById('color-replace-container');
+    const optColorMode = document.getElementById('opt-color-mode');
+    const optCustomVar = document.getElementById('opt-custom-var');
+    const optCleanWhitespace = document.getElementById('opt-clean-whitespace');
+
+    // Buttons & Display
+    const sizeInfo = document.getElementById('size-info');
+    const savingsBadge = document.getElementById('savings-badge');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    const zoomLevelDisplay = document.getElementById('zoom-level');
+
+    function processSVG() {
+      rawSVGCode = rawInput.value.trim();
+
+      if (!rawSVGCode) {
+        cleanOutput.value = '';
+        svgStage.innerHTML = `<div class="empty-state">No SVG loaded</div>`;
+        updateMetrics(0, 0);
+        return;
+      }
+
+      let code = rawSVGCode;
+
+      // 1. Regex pre-strip XML declaration, doctypes, and comments
+      if (optStripMetadata.checked) {
+        code = code.replace(/<\?xml[\s\S]*?\?>/gi, '');
+        code = code.replace(/<!DOCTYPE[\s\S]*?>/gi, '');
+        code = code.replace(/<!--[\s\S]*?-->/g, '');
+      }
+
+      // Parse via DOMParser for DOM-level manipulation
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(code, 'image/svg+xml');
+      const parserError = doc.querySelector('parsererror');
+
+      if (parserError) {
+        cleanOutput.value = "/* Invalid SVG XML Markup */\n" + parserError.textContent;
+        return;
+      }
+
+      const svgEl = doc.querySelector('svg');
+      if (!svgEl) {
+        cleanOutput.value = "/* No <svg> root element found */";
+        return;
+      }
+
+      // 2. Metadata & Attribute stripping
+      if (optStripMetadata.checked) {
+        const metadataNodes = doc.querySelectorAll('metadata, title, desc');
+        metadataNodes.forEach(node => node.remove());
+
+        // Strip editor attributes (sketch, inkscape, sodipodi, illustrator)
+        const stripAttrRegex = /^(sketch:|inkscape:|sodipodi:|xmlns:sketch|xmlns:inkscape|xmlns:sodipodi|i:)/i;
+        
+        function cleanNodeAttributes(node) {
+          if (node.attributes) {
+            Array.from(node.attributes).forEach(attr => {
+              if (stripAttrRegex.test(attr.name)) {
+                node.removeAttribute(attr.name);
+              }
+            });
+          }
+          for (let child of node.children) {
+            cleanNodeAttributes(child);
+          }
+        }
+        cleanNodeAttributes(svgEl);
+      }
+
+      // 3. ViewBox Normalization
+      if (optNormalizeViewbox.checked) {
+        const widthAttr = svgEl.getAttribute('width');
+        const heightAttr = svgEl.getAttribute('height');
+        const viewBoxAttr = svgEl.getAttribute('viewBox');
+
+        if (!viewBoxAttr && widthAttr && heightAttr) {
+          const w = parseFloat(widthAttr);
+          const h = parseFloat(heightAttr);
+          if (!isNaN(w) && !isNaN(h)) {
+            svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+          }
+        }
+
+        // Remove hardcoded width and height
+        svgEl.removeAttribute('width');
+        svgEl.removeAttribute('height');
+      }
+
+      // 4. ID & Class Prefixing / Sanitation
+      if (optSanitizeIds.checked) {
+        const prefix = optIdPrefix.value || 'svg-studio-';
+        const idMap = new Map();
+        let idCounter = 1;
+
+        // Find all IDs
+        const elementsWithId = doc.querySelectorAll('[id]');
+        elementsWithId.forEach(el => {
+          const oldId = el.getAttribute('id');
+          const newId = `${prefix}${idCounter++}`;
+          idMap.set(oldId, newId);
+          el.setAttribute('id', newId);
+        });
+
+        // Update url(#id) references in fills, strokes, clips, masks
+        if (idMap.size > 0) {
+          const allElements = doc.querySelectorAll('*');
+          allElements.forEach(el => {
+            Array.from(el.attributes).forEach(attr => {
+              idMap.forEach((newId, oldId) => {
+                if (attr.value.includes(`#${oldId}`)) {
+                  attr.value = attr.value.replace(new RegExp(`#${oldId}`, 'g'), `#${newId}`);
+                }
+              });
+            });
+          });
+        }
+      }
+
+      // 5. Color Replacement
+      if (optColorReplace.checked) {
+        const replacementColor = optColorMode.value === 'currentColor' 
+          ? 'currentColor' 
+          : (optCustomVar.value || 'var(--icon-color)');
+
+        const targetNodes = doc.querySelectorAll('*');
+        targetNodes.forEach(node => {
+          if (node.hasAttribute('fill') && node.getAttribute('fill') !== 'none') {
+            node.setAttribute('fill', replacementColor);
+          }
+          if (node.hasAttribute('stroke') && node.getAttribute('stroke') !== 'none') {
+            node.setAttribute('stroke', replacementColor);
+          }
+        });
+      }
+
+      // Export serialized string
+      const serializer = new XMLSerializer();
+      let resultString = serializer.serializeToString(svgEl);
+
+      // 6. Whitespace Minification
+      if (optCleanWhitespace.checked) {
+        resultString = resultString
+          .replace(/>\s+</g, '><')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      sanitizedSVGCode = resultString;
+      cleanOutput.value = sanitizedSVGCode;
+
+      // Update Live Stage Preview
+      svgStage.innerHTML = sanitizedSVGCode;
+
+      // Calculate sizes
+      const rawBytes = new Blob([rawSVGCode]).size;
+      const cleanBytes = new Blob([sanitizedSVGCode]).size;
+      updateMetrics(rawBytes, cleanBytes);
+    }
+
+    // Byte formatting helper
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function updateMetrics(rawBytes, cleanBytes) {
+      sizeInfo.textContent = `${formatBytes(rawBytes)} → ${formatBytes(cleanBytes)}`;
+      
+      if (rawBytes > 0) {
+        const savedPercent = Math.max(0, Math.round(((rawBytes - cleanBytes) / rawBytes) * 100));
+        savingsBadge.textContent = `Saved ${savedPercent}%`;
+        savingsBadge.style.display = 'inline-flex';
+      } else {
+        savingsBadge.style.display = 'none';
+      }
+    }
+
+    // Show Toast Notice
+    function showToast(msg, icon = '✨') {
+      toastMsg.textContent = msg;
+      document.getElementById('toast-icon').textContent = icon;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // Input Event Listeners
+    rawInput.value = DEFAULT_SVG;
+    rawInput.addEventListener('input', processSVG);
+
+    // Toggle options change
+    [optStripMetadata, optNormalizeViewbox, optSanitizeIds, optColorReplace, optCleanWhitespace, optColorMode].forEach(el => {
+      el.addEventListener('change', () => {
+        // Toggle sub-control visibility
+        idPrefixContainer.style.display = optSanitizeIds.checked ? 'block' : 'none';
+        colorReplaceContainer.style.display = optColorReplace.checked ? 'block' : 'none';
+        optCustomVar.style.display = (optColorReplace.checked && optColorMode.value === 'var') ? 'block' : 'none';
+        processSVG();
+      });
+    });
+
+    optIdPrefix.addEventListener('input', processSVG);
+    optCustomVar.addEventListener('input', processSVG);
+
+    // File Drag & Drop logic
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (!file.type.includes('svg') && !file.name.endsWith('.svg')) {
+        showToast('Please upload a valid .svg vector file', '⚠️');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        rawInput.value = e.target.result;
+        processSVG();
+        showToast(`Loaded ${file.name}`);
+      };
+      reader.readAsText(file);
+    }
+
+    // Zoom Controls
+    function setZoom(val) {
+      currentZoom = Math.min(Math.max(0.2, val), 3.0);
+      svgStage.style.transform = `scale(${currentZoom})`;
+      zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+
+    document.getElementById('btn-zoom-in').addEventListener('click', () => setZoom(currentZoom + 0.2));
+    document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(currentZoom - 0.2));
+    document.getElementById('btn-zoom-reset').addEventListener('click', () => setZoom(1.0));
+
+    // Background Selector
+    document.getElementById('bg-selector').addEventListener('click', (e) => {
+      if (e.target.classList.contains('segmented-btn')) {
+        document.querySelectorAll('#bg-selector .segmented-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        const targetBg = e.target.getAttribute('data-bg');
+        stageContainer.className = `stage-container ${targetBg}`;
+      }
+    });
+
+    // Copy Clean SVG
+    document.getElementById('btn-copy-code').addEventListener('click', () => {
+      if (!sanitizedSVGCode) return;
+      navigator.clipboard.writeText(sanitizedSVGCode).then(() => {
+        showToast('Clean SVG copied to clipboard!', '📋');
+      });
+    });
+
+    // Copy Data URI for CSS
+    document.getElementById('btn-copy-uri').addEventListener('click', () => {
+      if (!sanitizedSVGCode) return;
+      const encoded = encodeURIComponent(sanitizedSVGCode)
+        .replace(/'/g, "%27")
+        .replace(/"/g, "%22");
+      const dataURI = `data:image/svg+xml;utf8,${encoded}`;
+      
+      navigator.clipboard.writeText(`background-image: url('${dataURI}');`).then(() => {
+        showToast('CSS Data URI copied!', '🎨');
+      });
+    });
+
+    // Download SVG File
+    document.getElementById('btn-download').addEventListener('click', () => {
+      if (!sanitizedSVGCode) return;
+      const blob = new Blob([sanitizedSVGCode], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'cleaned-vector.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('SVG file downloaded!', '💾');
+    });
+
+    // Reset workspace
+    document.getElementById('btn-reset-default').addEventListener('click', () => {
+      rawInput.value = DEFAULT_SVG;
+      setZoom(1.0);
+      processSVG();
+      showToast('Workspace reset to default', '🔄');
+    });
+
+    // Initial Processing
+    processSVG();
+  </script>
+</body>
+</html>

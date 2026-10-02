@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser DB Inspector (Pure Vanilla)</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-bg-hover: #26334d;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-hover: #0284c7;
+            --primary-light: rgba(56, 189, 248, 0.1);
+            --purple: #c084fc;
+            --purple-light: rgba(192, 132, 252, 0.1);
+            --emerald: #34d399;
+            --emerald-hover: #059669;
+            --emerald-light: rgba(52, 211, 153, 0.1);
+            --rose: #f43f5e;
+            --rose-hover: #e11d48;
+            --rose-light: rgba(244, 63, 94, 0.1);
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "Fira Code", "JetBrains Mono", Consolas, Monaco, "Courier New", monospace;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            box-shadow: var(--shadow);
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            background: var(--primary-light);
+            color: var(--primary);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .version-tag {
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 0.1rem 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.85rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--card-bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #0f172a;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .btn-purple {
+            background: var(--purple-light);
+            color: var(--purple);
+            border-color: rgba(192, 132, 252, 0.3);
+        }
+
+        .btn-purple:hover {
+            background: rgba(192, 132, 252, 0.2);
+        }
+
+        .btn-emerald {
+            background: var(--emerald);
+            color: #0f172a;
+            border-color: var(--emerald);
+        }
+
+        .btn-emerald:hover {
+            background: var(--emerald-hover);
+            border-color: var(--emerald-hover);
+        }
+
+        .btn-rose {
+            background: var(--rose-light);
+            color: var(--rose);
+            border-color: rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-rose:hover {
+            background: rgba(244, 63, 94, 0.2);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        main {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            gap: 1rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 0.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-header span {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-header.primary span { color: var(--primary); }
+        .card-header.purple span { color: var(--purple); }
+
+        .card-header h3 {
+            font-size: 1.25rem;
+            margin-top: 0.2rem;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            background: var(--bg-color);
+            color: var(--text-muted);
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .metric-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .metric-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .module-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+
+        .module-header h3 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .module-header p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .backup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .backup-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.5);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .dropzone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .toolbar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-text, .select-input {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.45rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-text:focus, .select-input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-box {
+            min-width: 240px;
+            flex: 1;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+
+        thead {
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+            vertical-align: top;
+        }
+
+        tbody tr:hover {
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .code-cell {
+            font-family: var(--font-mono);
+            word-break: break-all;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-muted);
+        }
+
+        .type-badge.json {
+            background: var(--emerald-light);
+            color: var(--emerald);
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+
+        .json-tree {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            max-height: 250px;
+            overflow-y: auto;
+            background: var(--bg-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .json-key { color: var(--primary); }
+        .json-string { color: var(--emerald); }
+        .json-number { color: var(--purple); }
+        .json-boolean { color: #f59e0b; }
+        .json-null { color: var(--rose); }
+
+        .tree-node { margin-left: 1rem; }
+        .tree-toggle {
+            cursor: pointer;
+            user-select: none;
+            color: var(--text-muted);
+            font-weight: bold;
+            display: inline-block;
+            width: 1rem;
+        }
+        .tree-toggle:hover { color: var(--text-main); }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 540px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateY(10px);
+            transition: transform 0.2s ease;
+        }
+
+        .modal-overlay.open .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-header h3 { font-size: 1.1rem; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover { color: var(--text-main); }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .textarea-input {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            resize: vertical;
+            min-height: 120px;
+            outline: none;
+        }
+
+        .textarea-input:focus { border-color: var(--primary); }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+        }
+
+        #toastContainer {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            z-index: 60;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success { border-color: var(--emerald); background: rgba(5, 150, 105, 0.2); }
+        .toast.error { border-color: var(--rose); background: rgba(225, 29, 72, 0.2); }
+        .toast.info { border-color: var(--primary); background: rgba(2, 132, 199, 0.2); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-group">
+            <div class="logo-icon">&#128452;</div>
+            <div class="logo-text">
+                <h1>Browser Storage Inspector <span class="version-tag">Pure Vanilla</span></h1>
+                <p>Zero external scripts or dependencies</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button onclick="generateDemoData()" class="btn btn-purple">
+                &#9828; Seed Demo Data
+            </button>
+            <button onclick="refreshAll()" class="btn">
+                &#8635; Refresh
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button id="tabBtn-overview" onclick="switchTab('overview')" class="tab-btn active">
+                &#128202; Overview & Backup
+            </button>
+            <button id="tabBtn-localstorage" onclick="switchTab('localstorage')" class="tab-btn">
+                &#128190; LocalStorage
+            </button>
+            <button id="tabBtn-indexeddb" onclick="switchTab('indexeddb')" class="tab-btn">
+                &#128451; IndexedDB
+            </button>
+        </div>
+
+        <!-- TAB 1: OVERVIEW & BACKUP -->
+        <section id="tab-overview" class="tab-content active">
+            <div class="cards-grid">
+                <!-- LocalStorage Summary -->
+                <div class="summary-card">
+                    <div class="card-header primary">
+                        <div>
+                            <span>Storage Engine</span>
+                            <h3>LocalStorage</h3>
+                        </div>
+                        <span class="status-badge">Active</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <span class="metric-label">Total Keys</span>
+                            <span id="lsCount" class="metric-value">0</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">Est. Size</span>
+                            <span id="lsSize" class="metric-value">0 KB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IndexedDB Summary -->
+                <div class="summary-card">
+                    <div class="card-header purple">
+                        <div>
+                            <span>Storage Engine</span>
+                            <h3>IndexedDB</h3>
+                        </div>
+                        <span id="idbBadge" class="status-badge">Detected</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <span class="metric-label">Databases</span>
+                            <span id="idbDbCount" class="metric-value">0</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">Stores</span>
+                            <span id="idbStoreCount" class="metric-value">0</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">Records</span>
+                            <span id="idbRecordCount" class="metric-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export & Restore Module -->
+            <div class="module-card">
+                <div class="module-header">
+                    <h3>&#128190; Unified Storage Backup & Restore</h3>
+                    <p>Compile all LocalStorage and IndexedDB state into a JSON backup file, or restore from a previous backup.</p>
+                </div>
+
+                <div class="backup-grid">
+                    <div class="backup-box">
+                        <div>
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">&#128229; Export Unified Backup</h4>
+                            <p style="font-size: 0.75rem; color: var(--text-muted);">Generates a complete snapshot JSON file of all storage engines.</p>
+                        </div>
+                        <button onclick="exportBackup()" class="btn btn-emerald">
+                            &#128190; Download Backup (.json)
+                        </button>
+                    </div>
+
+                    <div class="dropzone" id="dropZone">
+                        <input type="file" id="restoreFileInput" accept=".json" onchange="handleFileSelect(event)">
+                        <span style="font-size: 1.5rem;">&#128228;</span>
+                        <h4 style="font-size: 0.85rem;">Drop `.json` backup file here</h4>
+                        <p style="font-size: 0.7rem; color: var(--text-muted);">or click to browse your computer</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: LOCALSTORAGE MANAGER -->
+        <section id="tab-localstorage" class="tab-content">
+            <div class="toolbar">
+                <input type="text" id="lsSearch" oninput="renderLocalStorageTable()" placeholder="Filter keys or values..." class="input-text search-box">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="openLSModal()" class="btn btn-primary">&#43; Add Key</button>
+                    <button onclick="clearLocalStorage()" class="btn btn-rose">&#128465; Clear LocalStorage</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Key</th>
+                                <th>Value</th>
+                                <th style="width: 10%;">Type</th>
+                                <th style="width: 10%;">Size</th>
+                                <th style="width: 15%; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lsTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: INDEXEDDB MANAGER -->
+        <section id="tab-indexeddb" class="tab-content">
+            <div class="toolbar">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 260px;">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Store:</label>
+                    <select id="idbSelector" onchange="renderIDBTable()" class="select-input" style="flex: 1;">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <input type="text" id="idbSearch" oninput="renderIDBTable()" placeholder="Filter records..." class="input-text" style="width: 200px;">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="openIDBModal()" class="btn btn-primary">&#43; Add Record</button>
+                    <button onclick="clearCurrentIDBStore()" class="btn btn-rose">&#128465; Clear Store</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Primary Key</th>
+                                <th>Record Content</th>
+                                <th style="width: 15%; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="idbTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Dialog -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button onclick="closeModal()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="form-group">
+                    <label id="modalKeyLabel">Key / Primary Key</label>
+                    <input type="text" id="modalKey" class="input-text code-cell">
+                </div>
+                <div class="form-group">
+                    <label>Value (Plain Text or JSON)</label>
+                    <textarea id="modalValue" class="textarea-input"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal()" class="btn">Cancel</button>
+                <button id="modalSaveBtn" onclick="saveModalData()" class="btn btn-primary">Save Record</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        let currentTab = 'overview';
+        let idbDataCache = {}; 
+        let activeModalMode = null; // 'ls' or 'idb'
+        let editingLSKey = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            setupDragAndDrop();
+        });
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            const targetBtn = document.getElementById(`tabBtn-${tabId}`);
+            const targetContent = document.getElementById(`tab-${tabId}`);
+
+            if (targetBtn) targetBtn.classList.add('active');
+            if (targetContent) targetContent.classList.add('active');
+
+            if (tabId === 'localstorage') renderLocalStorageTable();
+            if (tabId === 'indexeddb') renderIDBTable();
+        }
+
+        async function refreshAll() {
+            updateLocalStorageOverview();
+            await scanIndexedDB();
+
+            if (currentTab === 'localstorage') renderLocalStorageTable();
+            if (currentTab === 'indexeddb') renderIDBTable();
+        }
+
+        function updateLocalStorageOverview() {
+            const count = localStorage.length;
+            let totalBytes = 0;
+
+            for (let i = 0; i < count; i++) {
+                const key = localStorage.key(i);
+                const val = localStorage.getItem(key);
+                totalBytes += (key.length + (val ? val.length : 0)) * 2;
+            }
+
+            const kb = (totalBytes / 1024).toFixed(2);
+            document.getElementById('lsCount').innerText = count;
+            document.getElementById('lsSize').innerText = `${kb} KB`;
+        }
+
+        function renderLocalStorageTable() {
+            updateLocalStorageOverview();
+            const tbody = document.getElementById('lsTableBody');
+            const query = (document.getElementById('lsSearch').value || '').toLowerCase();
+            tbody.innerHTML = '';
+
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                keys.push(localStorage.key(i));
+            }
+
+            const filtered = keys.filter(k => {
+                const v = localStorage.getItem(k) || '';
+                return k.toLowerCase().includes(query) || v.toLowerCase().includes(query);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 2rem;">No matching LocalStorage entries found</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(key => {
+                const val = localStorage.getItem(key);
+                const byteSize = (key.length + (val ? val.length : 0)) * 2;
+                const parsed = safeJSONParse(val);
+
+                const tr = document.createElement('tr');
+                
+                let valueContentHTML = '';
+                if (parsed.isJSON) {
+                    valueContentHTML = renderJSONTree(parsed.data);
+                } else {
+                    valueContentHTML = `<div class="code-cell" style="max-height: 120px; overflow-y: auto;">${escapeHTML(val)}</div>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="code-cell" style="font-weight: 600; color: var(--primary);">${escapeHTML(key)}</td>
+                    <td>${valueContentHTML}</td>
+                    <td><span class="type-badge ${parsed.isJSON ? 'json' : ''}">${parsed.isJSON ? 'JSON' : typeof parsed.data}</span></td>
+                    <td style="color: var(--text-muted); font-family: var(--font-mono);">${byteSize} B</td>
+                    <td style="text-align: right;">
+                        <button onclick="copyToClipboard('${escapeJs(val)}')" class="btn btn-sm">&#128203;</button>
+                        <button onclick="editLSItem('${escapeJs(key)}')" class="btn btn-sm">&#9998;</button>
+                        <button onclick="deleteLSItem('${escapeJs(key)}')" class="btn btn-sm btn-rose">&#128465;</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteLSItem(key) {
+            localStorage.removeItem(key);
+            showToast(`Deleted key: "${key}"`, 'info');
+            renderLocalStorageTable();
+        }
+
+        function clearLocalStorage() {
+            if (confirm('Are you sure you want to clear ALL LocalStorage keys?')) {
+                localStorage.clear();
+                showToast('LocalStorage cleared', 'info');
+                renderLocalStorageTable();
+            }
+        }
+
+        async function scanIndexedDB() {
+            idbDataCache = {};
+            const selector = document.getElementById('idbSelector');
+            const prevSelected = selector.value;
+            selector.innerHTML = '';
+
+            if (!('indexedDB' in window) || !indexedDB.databases) {
+                document.getElementById('idbBadge').innerText = 'Not Supported';
+                return;
+            }
+
+            try {
+                const dbs = await indexedDB.databases();
+                document.getElementById('idbDbCount').innerText = dbs.length;
+
+                let totalStores = 0;
+                let totalRecords = 0;
+
+                for (const dbInfo of dbs) {
+                    if (!dbInfo.name) continue;
+                    const db = await openIDB(dbInfo.name);
+                    const storeNames = Array.from(db.objectStoreNames);
+                    totalStores += storeNames.length;
+
+                    for (const storeName of storeNames) {
+                        const records = await getAllIDBRecords(db, storeName);
+                        const key = `${dbInfo.name}|${storeName}`;
+                        idbDataCache[key] = records;
+                        totalRecords += records.length;
+
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = `${dbInfo.name} ➔ ${storeName} (${records.length} items)`;
+                        selector.appendChild(option);
+                    }
+                    db.close();
+                }
+
+                document.getElementById('idbStoreCount').innerText = totalStores;
+                document.getElementById('idbRecordCount').innerText = totalRecords;
+
+                if (prevSelected && idbDataCache[prevSelected]) {
+                    selector.value = prevSelected;
+                }
+            } catch (e) {
+                console.error("IndexedDB scan failed:", e);
+                showToast("Failed scanning IndexedDB databases", "error");
+            }
+        }
+
+        function renderIDBTable() {
+            const selector = document.getElementById('idbSelector');
+            const tbody = document.getElementById('idbTableBody');
+            const query = (document.getElementById('idbSearch').value || '').toLowerCase();
+            tbody.innerHTML = '';
+
+            const selectedKey = selector.value;
+            if (!selectedKey || !idbDataCache[selectedKey]) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 2rem;">No IndexedDB store selected or available</td></tr>`;
+                return;
+            }
+
+            const records = idbDataCache[selectedKey];
+            const filtered = records.filter(item => {
+                const keyStr = String(item.key).toLowerCase();
+                const valStr = JSON.stringify(item.value).toLowerCase();
+                return keyStr.includes(query) || valStr.includes(query);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 2rem;">No matching records found in store</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="code-cell" style="color: var(--purple); font-weight: 600;">${escapeHTML(String(item.key))}</td>
+                    <td>${renderJSONTree(item.value)}</td>
+                    <td style="text-align: right;">
+                        <button onclick="copyToClipboard('${escapeJs(JSON.stringify(item.value))}')" class="btn btn-sm">&#128203;</button>
+                        <button onclick="deleteIDBRecord('${selectedKey}', '${escapeJs(item.key)}')" class="btn btn-sm btn-rose">&#128465;</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteIDBRecord(storeKey, recKey) {
+            const [dbName, storeName] = storeKey.split('|');
+            const db = await openIDB(dbName);
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            
+            // Try numeric conversion if applicable
+            const keyToDel = !isNaN(recKey) ? Number(recKey) : recKey;
+            store.delete(keyToDel);
+
+            tx.oncomplete = async () => {
+                db.close();
+                showToast(`Deleted record "${recKey}"`, 'info');
+                await scanIndexedDB();
+                renderIDBTable();
+            };
+        }
+
+        async function clearCurrentIDBStore() {
+            const selector = document.getElementById('idbSelector');
+            if (!selector.value) return;
+
+            if (confirm(`Clear all items in store "${selector.value}"?`)) {
+                const [dbName, storeName] = selector.value.split('|');
+                const db = await openIDB(dbName);
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).clear();
+
+                tx.oncomplete = async () => {
+                    db.close();
+                    showToast(`Store cleared`, 'info');
+                    await scanIndexedDB();
+                    renderIDBTable();
+                };
+            }
+        }
+
+        async function exportBackup() {
+            showToast('Generating storage backup...', 'info');
+
+            const backup = {
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    origin: window.location.origin
+                },
+                localStorage: {},
+                indexedDB: {}
+            };
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                backup.localStorage[k] = localStorage.getItem(k);
+            }
+
+            if ('indexedDB' in window && indexedDB.databases) {
+                const dbs = await indexedDB.databases();
+                for (const dbInfo of dbs) {
+                    if (!dbInfo.name) continue;
+                    backup.indexedDB[dbInfo.name] = {};
+                    const db = await openIDB(dbInfo.name);
+                    for (const storeName of Array.from(db.objectStoreNames)) {
+                        backup.indexedDB[dbInfo.name][storeName] = await getAllIDBRecords(db, storeName);
+                    }
+                    db.close();
+                }
+            }
+
+            const jsonStr = JSON.stringify(backup, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `browser-db-backup-${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Backup JSON downloaded!', 'success');
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+            ['dragenter', 'dragover'].forEach(name => {
+                dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            });
+            ['dragleave', 'drop'].forEach(name => {
+                dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+            });
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length) processRestoreFile(files[0]);
+            });
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length) processRestoreFile(files[0]);
+        }
+
+        function processRestoreFile(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (confirm('Restore backup into browser storage? Existing entries will be merged.')) {
+                        if (data.localStorage) {
+                            Object.entries(data.localStorage).forEach(([k, v]) => localStorage.setItem(k, v));
+                        }
+
+                        if (data.indexedDB) {
+                            for (const [dbName, stores] of Object.entries(data.indexedDB)) {
+                                const storeNames = Object.keys(stores);
+                                const db = await openIDBWithStores(dbName, storeNames);
+
+                                for (const [storeName, records] of Object.entries(stores)) {
+                                    const tx = db.transaction(storeName, 'readwrite');
+                                    const store = tx.objectStore(storeName);
+                                    records.forEach(rec => store.put(rec.value, rec.key));
+                                }
+                                db.close();
+                            }
+                        }
+
+                        showToast('Restore completed successfully!', 'success');
+                        refreshAll();
+                    }
+                } catch (err) {
+                    showToast('Failed to parse backup JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function generateDemoData() {
+            localStorage.setItem('user_settings', JSON.stringify({ theme: 'dark', notifications: true, lang: 'en-US' }));
+            localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo_payload');
+
+            const db = await openIDBWithStores('AppDemoDB', ['users', 'settings']);
+            
+            const tx1 = db.transaction('users', 'readwrite');
+            tx1.objectStore('users').put({ name: 'Alice Smith', role: 'Developer', active: true }, 101);
+            tx1.objectStore('users').put({ name: 'Bob Jones', role: 'Designer', active: false }, 102);
+
+            const tx2 = db.transaction('settings', 'readwrite');
+            tx2.objectStore('settings').put({ key: 'app_version', value: '2.4.0' }, 'v_key');
+            tx2.objectStore('settings').put({ key: 'maintenance_mode', value: false }, 'm_key');
+
+            db.close();
+
+            showToast('Demo mock data populated!', 'success');
+            refreshAll();
+        }
+
+        function openLSModal() {
+            activeModalMode = 'ls';
+            editingLSKey = null;
+            document.getElementById('modalTitle').innerText = 'Add LocalStorage Item';
+            document.getElementById('modalKeyLabel').innerText = 'Key Name';
+            document.getElementById('modalKey').value = '';
+            document.getElementById('modalKey').disabled = false;
+            document.getElementById('modalValue').value = '';
+            document.getElementById('modalOverlay').classList.add('open');
+        }
+
+        function editLSItem(key) {
+            activeModalMode = 'ls';
+            editingLSKey = key;
+            document.getElementById('modalTitle').innerText = 'Edit LocalStorage Item';
+            document.getElementById('modalKeyLabel').innerText = 'Key Name';
+            document.getElementById('modalKey').value = key;
+            document.getElementById('modalKey').disabled = true;
+            document.getElementById('modalValue').value = localStorage.getItem(key) || '';
+            document.getElementById('modalOverlay').classList.add('open');
+        }
+
+        function openIDBModal() {
+            const selector = document.getElementById('idbSelector');
+            if (!selector.value) {
+                showToast('No active IndexedDB store selected', 'error');
+                return;
+            }
+
+            activeModalMode = 'idb';
+            document.getElementById('modalTitle').innerText = 'Add Record to IndexedDB';
+            document.getElementById('modalKeyLabel').innerText = 'Primary Key';
+            document.getElementById('modalKey').value = '';
+            document.getElementById('modalKey').disabled = false;
+            document.getElementById('modalValue').value = '{\n  "example": "data"\n}';
+            document.getElementById('modalOverlay').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('open');
+        }
+
+        async function saveModalData() {
+            const key = document.getElementById('modalKey').value.trim();
+            const valStr = document.getElementById('modalValue').value;
+
+            if (!key) {
+                showToast('Key cannot be empty', 'error');
+                return;
+            }
+
+            if (activeModalMode === 'ls') {
+                localStorage.setItem(key, valStr);
+                showToast(`Saved LocalStorage key: "${key}"`, 'success');
+                renderLocalStorageTable();
+            } else if (activeModalMode === 'idb') {
+                const selector = document.getElementById('idbSelector');
+                const [dbName, storeName] = selector.value.split('|');
+                const parsed = safeJSONParse(valStr);
+
+                const db = await openIDB(dbName);
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+
+                const recKey = !isNaN(key) ? Number(key) : key;
+                store.put(parsed.data, recKey);
+
+                tx.oncomplete = async () => {
+                    db.close();
+                    showToast(`Saved record to store`, 'success');
+                    await scanIndexedDB();
+                    renderIDBTable();
+                };
+            }
+
+            closeModal();
+        }
+
+        /* JSON Collapsible Tree Builder */
+        function renderJSONTree(obj) {
+            const treeContainer = document.createElement('div');
+            treeContainer.className = 'json-tree';
+            treeContainer.appendChild(buildTreeNode(obj));
+            return treeContainer.outerHTML;
+        }
+
+        function buildTreeNode(val, key = null) {
+            const node = document.createElement('div');
+            const keySpan = key !== null ? `<span class="json-key">"${escapeHTML(key)}": </span>` : '';
+
+            if (val === null) {
+                node.innerHTML = `${keySpan}<span class="json-null">null</span>`;
+            } else if (typeof val === 'boolean') {
+                node.innerHTML = `${keySpan}<span class="json-boolean">${val}</span>`;
+            } else if (typeof val === 'number') {
+                node.innerHTML = `${keySpan}<span class="json-number">${val}</span>`;
+            } else if (typeof val === 'string') {
+                node.innerHTML = `${keySpan}<span class="json-string">"${escapeHTML(val)}"</span>`;
+            } else if (typeof val === 'object') {
+                const isArray = Array.isArray(val);
+                const openBracket = isArray ? '[' : '{';
+                const closeBracket = isArray ? ']' : '}';
+                const keys = Object.keys(val);
+
+                if (keys.length === 0) {
+                    node.innerHTML = `${keySpan}${openBracket}${closeBracket}`;
+                } else {
+                    node.innerHTML = `${keySpan}<span>${openBracket}</span>`;
+                    const childrenContainer = document.createElement('div');
+                    childrenContainer.className = 'tree-node';
+
+                    keys.forEach(k => {
+                        childrenContainer.appendChild(buildTreeNode(val[k], k));
+                    });
+
+                    node.appendChild(childrenContainer);
+                    node.insertAdjacentHTML('beforeend', `<span>${closeBracket}</span>`);
+                }
+            }
+            return node;
+        }
+
+        /* IndexedDB Helpers */
+        function openIDB(dbName) {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(dbName);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function openIDBWithStores(dbName, storeNames) {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(dbName, Date.now());
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    storeNames.forEach(s => {
+                        if (!db.objectStoreNames.contains(s)) db.createObjectStore(s);
+                    });
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function getAllIDBRecords(db, storeName) {
+            return new Promise((resolve) => {
+                const records = [];
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const req = store.openCursor();
+
+                req.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        records.push({ key: cursor.key, value: cursor.value });
+                        cursor.continue();
+                    } else {
+                        resolve(records);
+                    }
+                };
+                req.onerror = () => resolve([]);
+            });
+        }
+
+        function safeJSONParse(str) {
+            try {
+                const data = JSON.parse(str);
+                return { isJSON: typeof data === 'object' && data !== null, data };
+            } catch (e) {
+                return { isJSON: false, data: str };
+            }
+        }
+
+        function escapeHTML(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function escapeJs(str) {
+            return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('Copied to clipboard!', 'info');
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = msg;
+
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

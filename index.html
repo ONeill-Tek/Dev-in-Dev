@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <link rel="manifest" href="./manifest.json">
+      <meta name="theme-color" content="#1e1e1e">
+      <link rel="icon" type="image/png" sizes="192x192" href="./icon_192.png">
+      <link rel="icon" type="image/png" sizes="512x512" href="./icon_512.png">
+      <link rel="apple-touch-icon" href="./icon_512.png">
+      <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+              .then(reg => console.log('SW Registered:', reg.scope))
+              .catch(err => console.error('SW Failed:', err));
+          });
+        }
+      </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Preview</title>
+</head>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #111; /* or your dark theme color */
+}
+
+header {
+  padding: 10px;
+  background: #222;
+  flex-shrink: 0; /* Keeps header pinned to its natural height */
+}
+
+#tool-frame {
+  width: 100%;
+  flex: 1; /* Automatically expands iframe to fill remaining height */
+  border: none;
+}
+</style>
+<body>
+<!-- Example Header Markup -->
+<header>
+     <button class="nav-btn" data-src="TypeLab.html">TypeLab</button>
+  <button class="nav-btn" data-src="./compiler/index.html">Offline CDN compiler</button>
+<button class="nav-btn" data-src="devref.html">DevRef</button>
+<button class="nav-btn" data-src="DBedit.html">DB Manager</button>
+<button class="nav-btn" data-src="SWBuilder.html">SW Builder</button>
+<button class="nav-btn" data-src="SVG Studio.html">SVG Studio</button>
+<button class="nav-btn" data-src="opengraph.html">Opengraph</button>
+<button class="nav-btn" data-src="icons2.html">SimpleIcon</button>
+</header>
+
+<iframe id="tool-frame" srcdoc="
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <style>
+        body {
+          background: #111;
+          color: #888;
+          font-family: system-ui, sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          text-align: center;
+        }
+        h2 { color: #fff; margin-bottom: 8px; }
+      </style>
+    </head>
+    <body>
+      <h2>Developer Toolkit Shell</h2>
+      <p>Select a tool from the menu above to begin.</p>
+    </body>
+  </html>
+"></iframe>
+
+<!-- Vanilla JS Switcher Script -->
+<script>
+  const frame = document.getElementById('tool-frame');
+  const buttons = document.querySelectorAll('.nav-btn');
+
+  buttons.forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    const targetSrc = e.currentTarget.getAttribute('data-src');
+
+    // Remove active class from all buttons, add to clicked button
+    buttons.forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+
+    try {
+      // Fetch the file text directly and inject as executable HTML
+      const response = await fetch(targetSrc);
+      const htmlText = await response.text();
+      frame.srcdoc = htmlText; 
+    } catch (err) {
+      // Fallback for standard web servers
+      frame.src = targetSrc;
+    }
+  });
+});
+</script>
+
+</body>
+</html>
