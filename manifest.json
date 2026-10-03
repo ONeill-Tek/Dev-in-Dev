@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "DevToolset",
-  "short_name": "DevToolset",
-  "description": "DevToolset application built with EliteAppWrap™.",
+  "name": "DevinDev",
+  "short_name": "DevinDev",
+  "description": "Developer toolset application built with EliteAppWrap™.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
