@@ -19,7 +19,6 @@
     input[type="range"] { width: 100%; }
 
     .btn { padding: 0.75rem 1rem; font-size: 1rem; font-weight: bold; color: #fff; background: #0070f3; border: none; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-    .btn-sync { background: #28a745; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
 
     #output { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -30,7 +29,7 @@
 <body>
 
   <h2>Logo Studio & Multi-Res Icon Builder</h2>
-  <p style="font-size: 0.9rem; color: #555;">Upload high-res raw images, position your logo, and export full branding sets.</p>
+  <p style="font-size: 0.9rem; color: #555;">Upload high-res raw images, position your logo/cover art, and export full branding and distribution sets.</p>
 
   <input type="file" id="imageInput" accept="image/*" style="margin-bottom: 1rem;">
 
@@ -57,7 +56,6 @@
       </div>
 
       <button id="generateBtn" class="btn" disabled>Generate Local Downloads</button>
-      <button id="syncBtn" class="btn btn-sync" disabled>⚡ Sync to Workspace</button>
     </div>
   </div>
 
@@ -71,7 +69,6 @@
     const bgColorInput = document.getElementById('bgColor');
     const transparentBg = document.getElementById('transparentBg');
     const generateBtn = document.getElementById('generateBtn');
-    const syncBtn = document.getElementById('syncBtn');
     const output = document.getElementById('output');
 
     let rawImg = null;
@@ -79,6 +76,7 @@
     let isDragging = false, startX = 0, startY = 0;
 
     const targets = [
+      { name: 'cover-art-3000.jpg', w: 3000, h: 3000, tag: 'Music Distributor Cover', format: 'image/jpeg', quality: 0.92 },
       { name: 'logo-master-2048.png', w: 2048, h: 2048, tag: 'High-Res Master' },
       { name: 'app-icon-1024.png', w: 1024, h: 1024, tag: 'App Stores' },
       { name: 'icon-512x512.png', w: 512, h: 512, tag: 'PWA Web App' },
@@ -108,7 +106,6 @@
           bgColorInput.disabled = false;
           transparentBg.disabled = false;
           generateBtn.disabled = false;
-          syncBtn.disabled = false;
 
           renderViewport();
         };
@@ -208,8 +205,10 @@
       const ratio = target.w / 280;
       mCtx.clearRect(0, 0, target.w, target.h);
 
-      if (!transparentBg.checked) {
-        mCtx.fillStyle = bgColorInput.value;
+      // JPEGs do not support transparency; default to selected background color or solid white
+      const isJpeg = target.format === 'image/jpeg';
+      if (!transparentBg.checked || isJpeg) {
+        mCtx.fillStyle = (!transparentBg.checked) ? bgColorInput.value : '#ffffff';
         mCtx.fillRect(0, 0, target.w, target.h);
       }
 
@@ -227,7 +226,9 @@
       if (target.isIco) {
         return await createIcoBlob(masterCanvas);
       } else {
-        return await new Promise(r => masterCanvas.toBlob(r, 'image/png'));
+        const mimeType = target.format || 'image/png';
+        const quality = target.quality || 0.92;
+        return await new Promise(r => masterCanvas.toBlob(r, mimeType, quality));
       }
     }
 
@@ -251,39 +252,6 @@
         `;
         output.appendChild(row);
       }
-    });
-
-    // Cross-Window PostMessage Bridge to EliteAppWrap
-    syncBtn.addEventListener('click', async () => {
-      if (!rawImg) return;
-      syncBtn.innerText = 'Syncing...';
-      syncBtn.disabled = true;
-
-      const payloadFiles = [];
-
-      for (const target of targets) {
-        const blob = await renderTargetBlob(target);
-        const arrayBuffer = await blob.arrayBuffer();
-
-        payloadFiles.push({
-          path: `assets/icons/${target.name}`,
-          name: target.name,
-          type: target.isIco ? 'image/x-icon' : 'image/png',
-          data: arrayBuffer
-        });
-      }
-
-      // Dispatch to parent frame (EliteAppWrap main window)
-      window.parent.postMessage({
-        type: 'ELITE_APP_WRAP_ASSETS_SYNC',
-        files: payloadFiles
-      }, '*');
-
-      syncBtn.innerText = '✓ Synced to Workspace';
-      setTimeout(() => {
-        syncBtn.innerText = '⚡ Sync to Workspace';
-        syncBtn.disabled = false;
-      }, 2000);
     });
   </script>
 
